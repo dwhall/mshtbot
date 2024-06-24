@@ -1,0 +1,2 @@
+# mshtbot
+Meshtastic bot scripts
