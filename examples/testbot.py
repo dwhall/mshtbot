@@ -8,11 +8,11 @@ the bot replies with a suggestion to try "test".
 If the received message arrives directly, the bot replies with RF SNR and RSSI.
 If the received message arrives multihop, the bot replies with the number
 of intermediate nodes that conveyed the message.
-For every received text message, the script prints to command line
-the (number of messages with a supported command in it) /
-(number of text messages received).
+For every received text message, the script logs the (number of messages with
+a supported command in it) / (number of text messages received).
 """
 
+import logging
 import time
 
 from pubsub import pub
@@ -20,10 +20,13 @@ from pubsub import pub
 import meshtastic
 import meshtastic.serial_interface
 
+logger = logging.getLogger(__name__)
+
 rcvd_text_msg_count = 0
 rcvd_command_count = 0
 
 def main():
+    logging.basicConfig(level=logging.INFO, datefmt="%Y/%m/%d %H:%M%S")
     pub.subscribe(on_receive, "meshtastic.receive")
     pub.subscribe(on_connection, "meshtastic.connection.established")
     with meshtastic.serial_interface.SerialInterface() as _:
@@ -31,11 +34,11 @@ def main():
             while True:
                 time.sleep(500)
         finally:
-            print("Done.")
+            logger.info('Finished')
 
 def on_connection(interface, topic=pub.AUTO_TOPIC):
     """called when we (re)connect to the radio"""
-    print("Ready.")
+    logger.info('Started.')
 
 def on_receive(packet:dict, interface):
     """called when a message arrives"""
@@ -46,7 +49,7 @@ def on_receive(packet:dict, interface):
     if reply:
         origin = rx_msg['from']
         interface.sendText(reply, destinationId=origin)
-        print(format_counts_reply())
+        logger.info(format_counts_reply())
 
 def process_received_message(rx_msg:dict) -> str:
     global rcvd_text_msg_count, rcvd_command_count
