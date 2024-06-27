@@ -71,11 +71,18 @@ def is_in_message(substr:str, msg:dict) -> bool:
     return substr in msg["decoded"]["text"].lower()
 
 def format_test_reply(msg:dict) -> str:
-    intermediate_node_count = msg['hopStart'] - msg['hopLimit']
-    if intermediate_node_count == 0:
-        return f"I heard you!\nSNR: {msg['rxSnr']}, RSSI: {msg['rxRssi']}"
+    msg_keys = msg.keys()
+    if "hopStart" not in msg_keys or "hopLimit" not in msg_keys:
+        return "I heard you, but can't count the hops your message took."
     else:
-        return f"I heard you!\nthrough {intermediate_node_count} nodes."
+        intermediate_node_count = msg['hopStart'] - msg['hopLimit']
+        if intermediate_node_count == 0:
+            if "rxSnr" not in msg_keys or "rxRssi" not in msg_keys:
+                return "I heard you, but didn't get any RF stats to share."
+            else:
+                return f"I heard you!\nSNR: {msg['rxSnr']}, RSSI: {msg['rxRssi']}"
+        else:
+            return f"I heard you!\nthrough {intermediate_node_count} nodes."
 
 def format_counts_reply() -> str:
     global rcvd_text_msg_count, rcvd_command_count
