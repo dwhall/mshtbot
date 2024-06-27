@@ -60,6 +60,7 @@ def process_received_message(rx_msg:dict) -> str:
             rcvd_command_count += 1
             return format_test_reply(rx_msg)
         elif is_in_message("counts", rx_msg):
+            rcvd_command_count += 1
             return format_counts_reply()
         return help_reply()
     return ""
