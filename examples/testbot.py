@@ -66,10 +66,14 @@ def process_received_message(rx_msg:dict) -> str:
     return ""
 
 def is_text_message(msg:dict) -> bool:
-    return msg["decoded"]["portnum"] == "TEXT_MESSAGE_APP"
+    if "decoded" in msg and "portnum" in msg["decoded"]:
+        return msg["decoded"]["portnum"] == "TEXT_MESSAGE_APP"
+    return False
 
 def is_in_message(substr:str, msg:dict) -> bool:
-    return substr in msg["decoded"]["text"].lower()
+    if "decoded" in msg and "text" in msg["decoded"]:
+        return substr in msg["decoded"]["text"].lower()
+    return False
 
 def get_reply_to_test_command(msg:dict) -> str:
     msg_keys = msg.keys()
