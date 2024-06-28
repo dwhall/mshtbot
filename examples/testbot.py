@@ -49,7 +49,7 @@ def on_receive(packet:dict, interface):
     if reply:
         origin = rx_msg['from']
         interface.sendText(reply, destinationId=origin)
-        logger.info(format_counts_reply())
+        logger.info(get_diagnostic_counts_message())
 
 def process_received_message(rx_msg:dict) -> str:
     global rcvd_text_msg_count, rcvd_command_count
@@ -58,10 +58,10 @@ def process_received_message(rx_msg:dict) -> str:
         rcvd_text_msg_count += 1
         if is_in_message("test", rx_msg):
             rcvd_command_count += 1
-            return format_test_reply(rx_msg)
+            return get_reply_to_test_command(rx_msg)
         elif is_in_message("counts", rx_msg):
             rcvd_command_count += 1
-            return format_counts_reply()
+            return get_diagnostic_counts_message()
         return help_reply()
     return ""
 
@@ -71,7 +71,7 @@ def is_text_message(msg:dict) -> bool:
 def is_in_message(substr:str, msg:dict) -> bool:
     return substr in msg["decoded"]["text"].lower()
 
-def format_test_reply(msg:dict) -> str:
+def get_reply_to_test_command(msg:dict) -> str:
     msg_keys = msg.keys()
     if "hopStart" not in msg_keys or "hopLimit" not in msg_keys:
         return "I heard you, but can't count the hops your message took."
@@ -85,9 +85,9 @@ def format_test_reply(msg:dict) -> str:
         else:
             return f"I heard you!\nthrough {intermediate_node_count} nodes."
 
-def format_counts_reply() -> str:
+def get_diagnostic_counts_message() -> str:
     global rcvd_text_msg_count, rcvd_command_count
-    return f"{rcvd_command_count}/{rcvd_text_msg_count}"
+    return f"{rcvd_command_count} commands / {rcvd_text_msg_count} messages"
 
 def help_reply():
     return "Put the word \"test\" in your message and see what happens."
