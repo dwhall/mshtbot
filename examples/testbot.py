@@ -27,7 +27,7 @@ rcvd_command_count = 0
 
 def main():
     logging.basicConfig(level=logging.INFO, datefmt="%Y/%m/%d %H:%M%S")
-    pub.subscribe(on_receive, "meshtastic.receive")
+    pub.subscribe(on_receive, "meshtastic.receive.text")
     pub.subscribe(on_connection, "meshtastic.connection.established")
     with meshtastic.serial_interface.SerialInterface() as _:
         try:
@@ -45,25 +45,22 @@ def on_receive(packet:dict, interface):
     # This script uses the name "rx_msg" but pubsub calls
     # this procedure with the named arg "packet"
     rx_msg = packet
-    reply = process_received_message(rx_msg)
+    reply = process_received_text_message(rx_msg)
     if reply:
         origin = rx_msg['from']
         interface.sendText(reply, destinationId=origin)
         logger.info(get_diagnostic_counts_message())
 
-def process_received_message(rx_msg:dict) -> str:
+def process_received_text_message(rx_msg:dict) -> str:
     global rcvd_text_msg_count, rcvd_command_count
-
-    if is_text_message(rx_msg):
-        rcvd_text_msg_count += 1
-        if is_in_message("test", rx_msg):
-            rcvd_command_count += 1
-            return get_reply_to_test_command(rx_msg)
-        elif is_in_message("counts", rx_msg):
-            rcvd_command_count += 1
-            return get_diagnostic_counts_message()
-        return help_reply()
-    return ""
+    rcvd_text_msg_count += 1
+    if is_in_message("test", rx_msg):
+        rcvd_command_count += 1
+        return get_reply_to_test_command(rx_msg)
+    elif is_in_message("counts", rx_msg):
+        rcvd_command_count += 1
+        return get_diagnostic_counts_message()
+    return help_reply()
 
 def is_text_message(msg:dict) -> bool:
     if "decoded" in msg and "portnum" in msg["decoded"]:
