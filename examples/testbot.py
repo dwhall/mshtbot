@@ -45,11 +45,16 @@ def on_receive(packet:dict, interface):
     # This script uses the name "rx_msg" but pubsub calls
     # this procedure with the named arg "packet"
     rx_msg = packet
+    if not intended_for_this_bot(rx_msg, interface):
+        return
     reply = process_received_text_message(rx_msg)
     if reply:
         origin = rx_msg['from']
         interface.sendText(reply, destinationId=origin)
         logger.info(get_diagnostic_counts_message())
+
+def intended_for_this_bot(rx_msg:dict, interface) -> bool:
+    return rx_msg["to"] == interface.myInfo.my_node_num
 
 def process_received_text_message(rx_msg:dict) -> str:
     global rcvd_text_msg_count, rcvd_command_count
@@ -61,11 +66,6 @@ def process_received_text_message(rx_msg:dict) -> str:
         rcvd_command_count += 1
         return get_diagnostic_counts_message()
     return help_reply()
-
-def is_text_message(msg:dict) -> bool:
-    if "decoded" in msg and "portnum" in msg["decoded"]:
-        return msg["decoded"]["portnum"] == "TEXT_MESSAGE_APP"
-    return False
 
 def is_in_message(substr:str, msg:dict) -> bool:
     if "decoded" in msg and "text" in msg["decoded"]:
