@@ -7,8 +7,10 @@
 REQUIREMENTS:
 
 * Install ollama: https://ollama.com/download
-* ollama pull <model of your choice>
+* $ ollama pull <model of your choice>
 * Set MODEL to <model of your choice>
+* $ pip install poetry
+* $ poetry install
 """
 
 import logging
@@ -24,7 +26,7 @@ from pubsub import pub
 logger = logging.getLogger(__name__)
 
 
-MODEL = "phi_55"
+MODEL = "phi"
 SYS = """You are a general AI providing conversation and helpful answers
         in 500 or fewer characters or fewer than 250 characters when possible."""
 
