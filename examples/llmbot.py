@@ -74,13 +74,15 @@ def get_llm_reply(sender, msg:str, llm_client, llm_context:dict) -> str:
         llm_context[sender] = llm_response["context"]
     return llm_response["response"]
 
-def send_msht_msg(interface, destId, msg:str):
+def send_msht_msg(interface, dest_id, msg:str):
     """Sends a message, fragmented into chunks if necessary, over the Meshtastic
     interface to the destination ID
     """
+    n = 0
     for reply_chunk in textwrap.wrap(msg, width=Constants.DATA_PAYLOAD_LEN, subsequent_indent="…", break_long_words=False):
-        interface.sendText(reply_chunk, destinationId=destId)
-        logger.info("Sent %d char reply to %s.", len(reply_chunk), destId)
+        interface.sendText(reply_chunk, destinationId=dest_id)
+        n += 1
+    logger.info("Sent %d chars in %d message(s) in reply to %s.", len(msg), n, dest_id)
 
 if __name__ == "__main__":
     main()
