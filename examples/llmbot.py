@@ -47,23 +47,40 @@ def main():
             logger.info("Finished.")
 
 def on_connection(interface, topic=pub.AUTO_TOPIC):
+    """This procedure is called when a serial connection is established
+    between this computer and a Meshtastic node.
+    """
     logger.info("Started.")
 
 def on_receive(packet:dict, interface, llm_client, llm_context:dict):
+    """This procedure is called when a Meshtastic text message is received.
+    Checks that the message was intended for this node,
+    dispatches the message to the LLM and sends the LLM's reply
+    back to the sender over Meshtastic.
+    """
     rx_msg = packet
     if rx_msg["to"] == interface.myInfo.my_node_num:
         sender = rx_msg["fromId"]
         reply = get_llm_reply(rx_msg["fromId"], rx_msg["decoded"]["text"], llm_client, llm_context)
-        for reply_chunk in textwrap.wrap(reply, width=Constants.DATA_PAYLOAD_LEN, subsequent_indent="…", break_long_words=False):
-            interface.sendText(reply_chunk, destinationId=sender)
-            logger.info("Sent %d char reply to %s.", len(reply_chunk), sender)
+        send_msht_msg(interface, sender, reply)
 
 def get_llm_reply(sender, msg:str, llm_client, llm_context:dict) -> str:
+    """Issues the message to the LLM client using the given context
+    and storing the resulting context.  Returns the LLM reply as a text string.
+    """
     context_for_this_sender = llm_context.get(sender, None)
     llm_response = llm_client.generate(model=MODEL, prompt=msg, context=context_for_this_sender, system=SYS_PROMPT)
     if llm_response["done"]:
         llm_context[sender] = llm_response["context"]
     return llm_response["response"]
+
+def send_msht_msg(interface, destId, msg:str):
+    """Sends a message, fragmented into chunks if necessary, over the Meshtastic
+    interface to the destination ID
+    """
+    for reply_chunk in textwrap.wrap(msg, width=Constants.DATA_PAYLOAD_LEN, subsequent_indent="…", break_long_words=False):
+        interface.sendText(reply_chunk, destinationId=destId)
+        logger.info("Sent %d char reply to %s.", len(reply_chunk), destId)
 
 if __name__ == "__main__":
     main()
