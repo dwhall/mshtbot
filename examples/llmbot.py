@@ -26,7 +26,7 @@ from pubsub import pub
 logger = logging.getLogger(__name__)
 
 
-MODEL = "phi"
+MODEL = "llama3.1"
 SYS = """You are a general AI providing conversation and helpful answers
         in 500 or fewer characters or fewer than 250 characters when possible."""
 
@@ -41,7 +41,7 @@ def main():
     with meshtastic.serial_interface.SerialInterface() as _:
         try:
             while True:
-                time.sleep(500)
+                time.sleep(100)
         finally:
             logger.info("Finished.")
 
