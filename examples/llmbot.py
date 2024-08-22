@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# coding: unicode_escape
 #
 # Copyright 2024 Dean Hall, see LICENSE for details
 
@@ -14,7 +15,9 @@ REQUIREMENTS:
 """
 
 import logging
+import textwrap
 import time
+from typing import Generator
 
 import meshtastic
 import meshtastic.serial_interface
@@ -27,7 +30,7 @@ logger = logging.getLogger(__name__)
 
 
 MODEL = "llama3.1"
-SYS = """You are a general AI providing conversation and helpful answers
+SYS_PROMPT = """You are a general AI providing conversation and helpful answers
         in 500 or fewer characters or fewer than 250 characters when possible."""
 
 context = {}
@@ -51,27 +54,23 @@ def on_connection(interface, topic=pub.AUTO_TOPIC):
 def on_receive(packet:dict, interface):
     rx_msg = packet
     if rx_msg["to"] == interface.myInfo.my_node_num:
-        reply = process_received_text_message(rx_msg)
-        if reply:
-            sender = rx_msg["fromId"]
+        sender = rx_msg["fromId"]
+        for reply in process_received_text_message(rx_msg):
             interface.sendText(reply, destinationId=sender)
             logger.info("Sent %d char reply to %s.", len(reply), sender)
 
-def process_received_text_message(rx_msg:dict) -> str:
+def process_received_text_message(rx_msg:dict) -> Generator[str, None, None]:
     reply = get_ollama_reply(rx_msg["fromId"], rx_msg["decoded"]["text"])
-    if len(reply) > Constants.DATA_PAYLOAD_LEN:
-        index_of_last_period = reply[:Constants.DATA_PAYLOAD_LEN].rfind(".")
-        return reply[:index_of_last_period + 1]
-    return reply
+    for chunk in textwrap.wrap(reply, width=Constants.DATA_PAYLOAD_LEN, subsequent_indent="…", break_long_words=False):
+        yield chunk
 
 def get_ollama_reply(sender, msg:str) -> str:
     global context, ollama_client
-    ctx = context.get(sender, None)
-    llm_response = ollama_client.generate(model=MODEL, prompt=msg, context=ctx, system=SYS)
+    context_for_this_sender = context.get(sender, None)
+    llm_response = ollama_client.generate(model=MODEL, prompt=msg, context=context_for_this_sender, system=SYS_PROMPT)
     if llm_response["done"]:
         context[sender] = llm_response["context"]
     return llm_response["response"]
-
 
 if __name__ == "__main__":
     main()
