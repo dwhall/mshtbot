@@ -80,12 +80,14 @@ def send_msht_msg(interface, dest_id, msg:str):
     """
     n = 0
     payld_sz = Constants.DATA_PAYLOAD_LEN - 7   # to fit header
+    char_cnt = 0
     total_msg_cnt = len(msg) // payld_sz
     for reply_chunk in textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False):
         n += 1
         header = f"[{n}/{total_msg_cnt}] "
         interface.sendText(header + reply_chunk, destinationId=dest_id)
-    logger.info("Sent %d chars in %d message(s) in reply to %s.", len(msg), n, dest_id)
+        char_cnt += header + reply_chunk
+    logger.info("Sent %d chars in %d message(s) in reply to %s.", char_cnt, n, dest_id)
 
 if __name__ == "__main__":
     main()
