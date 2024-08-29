@@ -58,11 +58,12 @@ def on_receive(packet:dict, interface, llm_client, llm_context:dict):
     dispatches the message to the LLM and sends the LLM's reply
     back to the sender over Meshtastic.
     """
-    rx_msg = packet
-    if rx_msg["to"] == interface.myInfo.my_node_num:
-        sender = rx_msg["fromId"]
-        reply = get_llm_reply(rx_msg["fromId"], rx_msg["decoded"]["text"], llm_client, llm_context)
-        send_msht_msg(interface, sender, reply)
+    if packet["to"] != interface.myInfo.my_node_num: return
+    sender = packet["fromId"]
+    msg_payld = packet["decoded"]["text"]
+    logger.info("Received %d chars from %s.", len(msg_payld), sender)
+    reply = get_llm_reply(packet["fromId"], msg_payld, llm_client, llm_context)
+    send_msht_msg(interface, sender, reply)
 
 def get_llm_reply(sender, msg:str, llm_client, llm_context:dict) -> str:
     """Issues the message to the LLM client using the given context
