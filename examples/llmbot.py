@@ -86,7 +86,7 @@ def send_msht_msg(interface, dest_id, msg:str):
         n += 1
         header = f"[{n}/{total_msg_cnt}] "
         interface.sendText(header + reply_chunk, destinationId=dest_id)
-        char_cnt += header + reply_chunk
+        char_cnt += len(header) + len(reply_chunk)
     logger.info("Sent %d chars in %d message(s) in reply to %s.", char_cnt, n, dest_id)
 
 if __name__ == "__main__":
