@@ -84,10 +84,18 @@ def send_msht_msg(interface, dest_id, msg:str):
     total_msg_cnt = ceildiv(len(msg), payld_sz)
     for reply_chunk in textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False):
         n += 1
-        header = f"[{n}/{total_msg_cnt}] "
+        header = optionalHeader(n, total_msg_cnt)
         interface.sendText(header + reply_chunk, destinationId=dest_id)
         char_cnt += len(header) + len(reply_chunk)
     logger.info("Sent %d chars in %d message(s) in reply to %s.", char_cnt, n, dest_id)
+
+def optionalHeader(n: int, d: int) -> str:
+    """Returns a header indicating the chunk-numbering of the reply.
+    Or, if the reply fits in one message, the header is empty.
+    """
+    if d > 1:
+        return f"[{n}/{d}] "
+    return ""
 
 def ceildiv(a, b):
     """Perform upside-down floor division to get ceiling division
