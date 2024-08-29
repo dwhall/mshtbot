@@ -43,6 +43,8 @@ def main():
         try:
             while True:
                 time.sleep(100)
+        except KeyboardInterrupt:
+            pass
         finally:
             logger.info("Finished.")
 
