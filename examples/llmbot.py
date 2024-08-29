@@ -81,13 +81,19 @@ def send_msht_msg(interface, dest_id, msg:str):
     n = 0
     payld_sz = Constants.DATA_PAYLOAD_LEN - 7   # to fit header
     char_cnt = 0
-    total_msg_cnt = len(msg) // payld_sz
+    total_msg_cnt = ceildiv(len(msg), payld_sz)
     for reply_chunk in textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False):
         n += 1
         header = f"[{n}/{total_msg_cnt}] "
         interface.sendText(header + reply_chunk, destinationId=dest_id)
         char_cnt += len(header) + len(reply_chunk)
     logger.info("Sent %d chars in %d message(s) in reply to %s.", char_cnt, n, dest_id)
+
+def ceildiv(a, b):
+    """Perform upside-down floor division to get ceiling division
+    https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
+    """
+    return -(a // -b)
 
 if __name__ == "__main__":
     main()
