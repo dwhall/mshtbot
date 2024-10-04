@@ -81,18 +81,20 @@ def send_msht_msg(interface, dest_id, msg:str):
     """Sends a message, fragmented into chunks if necessary, over the Meshtastic
     interface to the destination ID
     """
+    MAX_HEADER_SIZE = 7 # chars
     n = 0
-    payld_sz = Constants.DATA_PAYLOAD_LEN - 7   # to fit header
-    char_cnt = 0
-    total_msg_cnt = ceildiv(len(msg), payld_sz)
-    for reply_chunk in textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False):
+    payld_sz = Constants.DATA_PAYLOAD_LEN - MAX_HEADER_SIZE
+    sent_char_cnt = 0
+    approx_chunk_cnt = ceildiv(len(msg), payld_sz)  # approx because not accounting for header
+    # Fragment msg into 1+ chunk(s) that fit in the meshtastic payload
+    for chunk in textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False):
         n += 1
-        header = optionalHeader(n, total_msg_cnt)
-        interface.sendText(header + reply_chunk, destinationId=dest_id)
-        if total_msg_cnt > 1:
+        text = optionalHeader(n, approx_chunk_cnt) + chunk
+        interface.sendText(text, destinationId=dest_id)
+        if approx_chunk_cnt > 1:
             time.sleep(10.0)    # TODO: make non-blocking
-        char_cnt += len(header) + len(reply_chunk)
-    logger.info("Sent %d chars in %d message(s) in reply to %s.", char_cnt, n, dest_id)
+        sent_char_cnt += len(text)
+    logger.info("Sent %d chars in %d message(s) in reply to %s.", sent_char_cnt, n, dest_id)
 
 def optionalHeader(n: int, d: int) -> str:
     """Returns a header indicating the chunk-numbering of the reply.
