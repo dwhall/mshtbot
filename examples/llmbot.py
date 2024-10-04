@@ -28,7 +28,7 @@ from pubsub import pub
 logger = logging.getLogger(__name__)
 
 
-MODEL = "llama3.1"
+MODEL = "llama3.2"
 SYS_PROMPT = """You are a general AI providing conversation and helpful answers
         in 500 or fewer characters or fewer than 250 characters when possible."""
 
