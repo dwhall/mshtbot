@@ -18,7 +18,7 @@ import time
 
 import meshtastic
 import meshtastic.serial_interface
-from meshtastic.mesh_pb2 import Constants
+from meshtastic.protobuf.mesh_pb2  import Constants
 from ollama import Client
 from pubsub import pub
 
