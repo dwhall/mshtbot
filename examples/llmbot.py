@@ -10,8 +10,6 @@ REQUIREMENTS:
 * Install ollama: https://ollama.com/download
 * $ ollama pull <model of your choice>
 * Set MODEL to <model of your choice>
-* $ pip install poetry
-* $ poetry install
 """
 
 import logging
