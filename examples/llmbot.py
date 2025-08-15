@@ -12,6 +12,7 @@ REQUIREMENTS:
 * Set MODEL to <model of your choice>
 """
 
+import argparse
 import logging
 import textwrap
 import time
@@ -27,17 +28,19 @@ logger = logging.getLogger(__name__)
 
 
 MODEL = "llama3.2"
+SER_PORT = "COM5"
 SYS_PROMPT = """You are a general AI providing conversation and helpful answers
         in 500 or fewer characters or fewer than 250 characters when possible."""
 
 
 def main():
+    args = parse_args()
     llm_context = {}
     ollama_client = Client(host="http://localhost:11434")
     logging.basicConfig(level=logging.INFO, datefmt="%Y/%m/%d %H:%M%S")
     pub.subscribe(on_receive, "meshtastic.receive.text", llm_client=ollama_client, llm_context=llm_context)
     pub.subscribe(on_connection, "meshtastic.connection.established")
-    with meshtastic.serial_interface.SerialInterface() as _:
+    with meshtastic.serial_interface.SerialInterface(args.port) as _:
         try:
             while True:
                 time.sleep(100)
@@ -45,6 +48,11 @@ def main():
             pass
         finally:
             logger.info("Finished.")
+
+def parse_args():
+    parser = argparse.ArgumentParser(description="Meshtastic LLM bot")
+    parser.add_argument("--port", type=str, default=SER_PORT, help="Serial port to connect to Meshtastic device")
+    return parser.parse_args()
 
 def on_connection(interface, topic=pub.AUTO_TOPIC):
     """This procedure is called when a serial connection is established
