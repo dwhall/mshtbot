@@ -96,7 +96,7 @@ def send_msht_msg(interface, dest_id, msg:str):
     for n, msg_frag in enumerate(msg_frags):
         # TODO: make non-blocking
         if n > 0: time.sleep(DELAY_BETWEEN_MSGS)
-        text = optionalHeader(n, len(msg_frags)) + msg_frag
+        text = optionalHeader(n+1, len(msg_frags)) + msg_frag
         interface.sendText(text, destinationId=dest_id)
         sent_char_cnt += len(text)
     logger.info("Sent %d chars in %d message(s) in reply to %s.", sent_char_cnt, len(msg_frags), dest_id)
