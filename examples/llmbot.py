@@ -88,19 +88,17 @@ def send_msht_msg(interface, dest_id, msg:str):
     interface to the destination ID
     """
     MAX_HEADER_SIZE = 7 # chars
-    n = 0
     payld_sz = Constants.DATA_PAYLOAD_LEN - MAX_HEADER_SIZE
     sent_char_cnt = 0
-    approx_chunk_cnt = ceildiv(len(msg), payld_sz)  # approx because not accounting for header
     # Fragment msg into 1+ chunk(s) that fit in the meshtastic payload
-    for chunk in textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False):
+    chunks = textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False)
+    for n, chunk in enumerate(chunks):
         # TODO: make non-blocking
         if n > 0: time.sleep(DELAY_BETWEEN_MSGS)
-        n += 1
-        text = optionalHeader(n, approx_chunk_cnt) + chunk
+        text = optionalHeader(n, len(chunks)) + chunk
         interface.sendText(text, destinationId=dest_id)
         sent_char_cnt += len(text)
-    logger.info("Sent %d chars in %d message(s) in reply to %s.", sent_char_cnt, n, dest_id)
+    logger.info("Sent %d chars in %d message(s) in reply to %s.", sent_char_cnt, len(chunks), dest_id)
 
 def optionalHeader(n: int, d: int) -> str:
     """Returns a header indicating the chunk-numbering of the reply.
@@ -109,12 +107,6 @@ def optionalHeader(n: int, d: int) -> str:
     if d > 1:
         return f"[{n}/{d}] "
     return ""
-
-def ceildiv(a, b):
-    """Perform upside-down floor division to get ceiling division
-    https://stackoverflow.com/questions/14822184/is-there-a-ceiling-equivalent-of-operator-in-python
-    """
-    return -(a // -b)
 
 if __name__ == "__main__":
     main()
