@@ -87,8 +87,9 @@ def send_msht_msg(interface, dest_id, msg:str):
     """Sends a message, fragmented if necessary, over the Meshtastic interface
     to the destination ID
     """
+    SAFETY_MARGIN = 8 # chars
     MAX_HEADER_SIZE = 7 # chars
-    payld_sz = Constants.DATA_PAYLOAD_LEN - MAX_HEADER_SIZE
+    payld_sz = Constants.DATA_PAYLOAD_LEN - MAX_HEADER_SIZE - SAFETY_MARGIN
     sent_char_cnt = 0
     # Fragment msg if necessary to fit in the meshtastic payload
     msg_frags = textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False)
