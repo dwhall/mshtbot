@@ -31,7 +31,7 @@ MODEL = "llama3.2"
 SER_PORT = "COM5"
 SYS_PROMPT = """You are a general AI providing conversation and helpful answers
         in 500 or fewer characters or fewer than 250 characters when possible."""
-
+DELAY_BETWEEN_MSGS = 10.0  # seconds.  Allows time to read the message and reduces flooding
 
 def main():
     args = parse_args()
@@ -94,11 +94,11 @@ def send_msht_msg(interface, dest_id, msg:str):
     approx_chunk_cnt = ceildiv(len(msg), payld_sz)  # approx because not accounting for header
     # Fragment msg into 1+ chunk(s) that fit in the meshtastic payload
     for chunk in textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False):
+        # TODO: make non-blocking
+        if n > 0: time.sleep(DELAY_BETWEEN_MSGS)
         n += 1
         text = optionalHeader(n, approx_chunk_cnt) + chunk
         interface.sendText(text, destinationId=dest_id)
-        if approx_chunk_cnt > 1:
-            time.sleep(10.0)    # TODO: make non-blocking
         sent_char_cnt += len(text)
     logger.info("Sent %d chars in %d message(s) in reply to %s.", sent_char_cnt, n, dest_id)
 
