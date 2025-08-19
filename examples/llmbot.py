@@ -84,24 +84,24 @@ def get_llm_reply(sender, msg:str, llm_client, llm_context:dict) -> str:
     return llm_response["response"]
 
 def send_msht_msg(interface, dest_id, msg:str):
-    """Sends a message, fragmented into chunks if necessary, over the Meshtastic
-    interface to the destination ID
+    """Sends a message, fragmented if necessary, over the Meshtastic interface
+    to the destination ID
     """
     MAX_HEADER_SIZE = 7 # chars
     payld_sz = Constants.DATA_PAYLOAD_LEN - MAX_HEADER_SIZE
     sent_char_cnt = 0
-    # Fragment msg into 1+ chunk(s) that fit in the meshtastic payload
-    chunks = textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False)
-    for n, chunk in enumerate(chunks):
+    # Fragment msg if necessary to fit in the meshtastic payload
+    msg_frags = textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False)
+    for n, msg_frag in enumerate(msg_frags):
         # TODO: make non-blocking
         if n > 0: time.sleep(DELAY_BETWEEN_MSGS)
-        text = optionalHeader(n, len(chunks)) + chunk
+        text = optionalHeader(n, len(msg_frags)) + msg_frag
         interface.sendText(text, destinationId=dest_id)
         sent_char_cnt += len(text)
-    logger.info("Sent %d chars in %d message(s) in reply to %s.", sent_char_cnt, len(chunks), dest_id)
+    logger.info("Sent %d chars in %d message(s) in reply to %s.", sent_char_cnt, len(msg_frags), dest_id)
 
 def optionalHeader(n: int, d: int) -> str:
-    """Returns a header indicating the chunk-numbering of the reply.
+    """Returns a header indicating the message numbering of the reply.
     Or, if the reply fits in one message, the header is empty.
     """
     if d > 1:
