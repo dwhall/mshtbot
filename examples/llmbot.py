@@ -70,8 +70,16 @@ def on_receive(packet:dict, interface, llm_client, llm_context:dict):
     sender = packet["fromId"]
     msg_payld = packet["decoded"]["text"]
     logger.info("Received %d chars from %s.", len(msg_payld), sender)
-    reply = get_llm_reply(packet["fromId"], msg_payld, llm_client, llm_context)
+    reply = generate_reply(packet["fromId"], msg_payld, llm_client, llm_context)
     send_msht_msg(interface, sender, reply)
+
+def generate_reply(sender, msg:str, llm_client, llm_context:dict) -> str:
+    try:
+        reply = get_llm_reply(sender, msg, llm_client, llm_context)
+    except Exception as e:
+        logger.error("LLM exception: %s", e)
+        reply = "LLM exception.  Brain fail.  Beep, boop."
+    return reply
 
 def get_llm_reply(sender, msg:str, llm_client, llm_context:dict) -> str:
     """Issues the message to the LLM client using the given context
