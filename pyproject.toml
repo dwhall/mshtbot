@@ -7,6 +7,7 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.10"
 dependencies = [
+    "farc>=0.2.0",
     "meshtastic>=2.3",
     "ollama>=0.5",
     "pubsub>=0.1",
