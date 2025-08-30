@@ -66,9 +66,10 @@ def on_receive(packet:dict, interface, llm_ahsm):
     if packet["to"] != interface.myInfo.my_node_num: return
     sender = packet["fromId"]
     msg = packet["decoded"]["text"]
+    pkt_id = packet["id"]
     logger.info("Received %d chars from %s.", len(msg), sender)
     llm_ahsm.interface = interface
-    llm_ahsm.accept_inbound_msg(sender, msg)
+    llm_ahsm.accept_inbound_msg(sender, msg, pkt_id)
 
 class MsgBotAhsm(farc.Ahsm):
     def __init__(self, ser_port:str):
@@ -121,14 +122,14 @@ class MsgBotAhsm(farc.Ahsm):
         return self.super(MsgBotAhsm._running)
 
     # Methods
-    def accept_inbound_msg(self, sender, msg:str):
-        self.inbound_queue.appendleft((sender, msg))
+    def accept_inbound_msg(self, sender, msg:str, pkt_id:int):
+        self.inbound_queue.appendleft((sender, msg, pkt_id))
         self.post_fifo(MSG_RECEIVED)
 
     def process_inbound_msg(self):
-        (sender, msg) = self.inbound_queue.pop()
+        (sender, msg, pkt_id) = self.inbound_queue.pop()
         full_reply = self.generate_reply(sender, msg)
-        self.post_outbound_msg(sender, full_reply)
+        self.post_outbound_msg(sender, full_reply, pkt_id)
 
     def generate_reply(self, sender, msg:str) -> str:
         """Gives the sender's message to the LLM and returns the LLM's reply
@@ -145,24 +146,24 @@ class MsgBotAhsm(farc.Ahsm):
             reply = "LLM exception.  Brain fail.  Beep, boop."
         return reply
 
-    def post_outbound_msg(self, dest_id, msg:str):
+    def post_outbound_msg(self, dest_id, msg:str, pkt_id:int):
         """Enqueues a message, in fragments if necessary, to the outbound queue.
         Posts an event to self to send one message immediately.
         """
         SAFETY_MARGIN = 8 # chars
         MAX_HEADER_SIZE = len(optionalHeader(99, 99)) # 8 chars
         payld_sz = Constants.DATA_PAYLOAD_LEN - MAX_HEADER_SIZE - SAFETY_MARGIN
-        msg_frags = textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False)
+        msg_frags = textwrap.wrap(msg, width=payld_sz, subsequent_indent="â€¦", break_long_words=False)
         for n, msg_frag in enumerate(msg_frags):
             msg_payload = optionalHeader(n+1, len(msg_frags)) + msg_frag
-            self.outbound_queue.appendleft((dest_id, msg_payload))
+            self.outbound_queue.appendleft((dest_id, msg_payload, pkt_id))
         self.post_lifo(SEND_NOW)
 
     def send_any_outbound_msg(self):
         if len(self.outbound_queue) > 0:
-            (dest_id, msg_payload) = self.outbound_queue.pop()
+            (dest_id, msg_payload, pkt_id) = self.outbound_queue.pop()
             # DWH: TODO: try self.msht_intf instead of .interface
-            self.interface.sendText(msg_payload, destinationId=dest_id)
+            self.interface.sendText(msg_payload, destinationId=dest_id, replyId=pkt_id)
             logger.info("Sent %d byte message in reply to %s.", len(msg_payload), dest_id)
 
 def optionalHeader(n: int, d: int) -> str:
