@@ -68,7 +68,6 @@ def on_receive(packet:dict, interface, llm_ahsm):
     msg = packet["decoded"]["text"]
     pkt_id = packet["id"]
     logger.info("Received %d chars from %s.", len(msg), sender)
-    llm_ahsm.interface = interface
     llm_ahsm.accept_inbound_msg(sender, msg, pkt_id)
 
 class MsgBotAhsm(farc.Ahsm):
@@ -162,8 +161,7 @@ class MsgBotAhsm(farc.Ahsm):
     def send_any_outbound_msg(self):
         if len(self.outbound_queue) > 0:
             (dest_id, msg_payload, pkt_id) = self.outbound_queue.pop()
-            # DWH: TODO: try self.msht_intf instead of .interface
-            self.interface.sendText(msg_payload, destinationId=dest_id, replyId=pkt_id)
+            self.msht_intf.sendText(msg_payload, destinationId=dest_id, replyId=pkt_id)
             logger.info("Sent %d byte message in reply to %s.", len(msg_payload), dest_id)
 
 def optionalHeader(n: int, d: int) -> str:
