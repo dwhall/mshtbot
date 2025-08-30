@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# coding: unicode_escape
 #
 # Copyright 2024 Dean Hall, see LICENSE for details
 
@@ -29,7 +28,7 @@ MODEL = "llama3.2"
 SER_PORT = "COM5"
 SYS_PROMPT = """You are a general AI providing conversation and helpful answers
         in 500 or fewer characters or fewer than 250 characters when possible. Do not use emojis."""
-DELAY_BETWEEN_MSGS = 10.0  # seconds.  Allows time to read the message and reduces flooding
+DELAY_BETWEEN_MSGS = 30.0  # seconds.  Allows time to read the message and reduces flooding
 
 logging.basicConfig(level=logging.INFO, datefmt="%Y/%m/%d %H:%M:%S")
 logger = logging.getLogger(__name__)
@@ -79,7 +78,7 @@ class MsgBotAhsm(farc.Ahsm):
     @farc.Hsm.state
     def _initial(self, event):
         logger.info("_initial")
-        self.tm_evt = farc.TimeEvent("TEN_SEC")
+        self.tm_evt = farc.TimeEvent("TIMER_ELAPSED")
         return self.tran(MsgBotAhsm._listening)
 
     @farc.Hsm.state
@@ -95,10 +94,14 @@ class MsgBotAhsm(farc.Ahsm):
             self.outbound_queue = collections.deque()
             self.llm_context = {}
             self.llm_client = Client(host="http://localhost:11434")
-            self.tm_evt.post_every(self, 10) # seconds
             return self.handled(event)
-        elif sig == farc.Signal.TEN_SEC or sig == farc.Signal.SEND_NOW:
+        elif sig == farc.Signal.SEND_NOW:
             self.send_any_outbound_msg()
+            if len(self.outbound_queue) > 0:
+                self.tm_evt.post_in(self, DELAY_BETWEEN_MSGS)
+            return self.handled(event)
+        elif sig == farc.Signal.TIMER_ELAPSED:
+            self.post_lifo(SEND_NOW)
             return self.handled(event)
         elif sig == farc.Signal.EXIT:
             logger.info("Exiting _running")
@@ -152,7 +155,7 @@ class MsgBotAhsm(farc.Ahsm):
         SAFETY_MARGIN = 8 # chars
         MAX_HEADER_SIZE = len(optionalHeader(99, 99)) # 8 chars
         payld_sz = Constants.DATA_PAYLOAD_LEN - MAX_HEADER_SIZE - SAFETY_MARGIN
-        msg_frags = textwrap.wrap(msg, width=payld_sz, subsequent_indent="…", break_long_words=False)
+        msg_frags = textwrap.wrap(msg, width=payld_sz, break_long_words=False)
         for n, msg_frag in enumerate(msg_frags):
             msg_payload = optionalHeader(n+1, len(msg_frags)) + msg_frag
             self.outbound_queue.appendleft((dest_id, msg_payload, pkt_id))
